@@ -14729,15 +14729,15 @@ html[data-theme="devprotocol"] body::after{
   // is checked instantly on your device. It catches tricks like f*ck, sh1t,
   // f.u.c.k, fuuuck, $hit, b!tch, or one swapped letter. If it finds one,
   // a report goes straight to the devs (Court) automatically.
-  var AM_WORDS = ["fuck", "shit", "bitch", "cunt", "dick", "pussy", "asshole", "bastard", "whore", "slut",
-                  "piss", "nigger", "nigga", "faggot", "retard", "motherfucker", "bullshit", "dickhead", "cock", "twat", "wanker"];
+  // Only these count (owner's list): the f word, s word, a word, d words, p words, n word.
+  var AM_WORDS = ["fuck", "motherfucker", "shit", "bullshit", "ass", "asshole", "dick", "dickhead", "pussy", "piss", "nigger", "nigga"];
   // real words that are one letter away from a curse — never flagged
   var AM_OK = { shot: 1, shut: 1, shoot: 1, shit_: 0, duck: 1, luck: 1, puck: 1, buck: 1, tuck: 1, muck: 1, dock: 1, deck: 1, dusk: 1,
                 cant: 1, cent: 1, kent: 1, pass: 1, puss: 1, slot: 1, slat: 1, where: 1, batch: 1, botch: 1, butch: 1, witch: 1, pitch: 1, ditch: 1,
                 hitch: 1, cook: 1, rock: 1, sock: 1, lock: 1, dick_: 0, kick: 1, pick: 1, sick: 1, tick: 1, wick: 1, nick: 1, hick: 1, rick: 1,
                 bitcoin: 1, scunthorpe: 1, cocktail: 1, cockpit: 1, peacock: 1, hancock: 1, dickens: 1, shitake: 1, shiitake: 1, passing: 1,
                 bass: 1, mass: 1, glass: 1, class: 1, grass: 1, assess: 1, assist: 1, assign: 1, bastion: 1, pussycat: 0, twain: 1, swat: 1, twit: 1,
-                twas: 1, banker: 1, tanker: 1, wander: 1, wonder: 1, slit: 1 };
+                twas: 1, sheet: 1, sheets: 1, psst: 1, pssst: 1, niggle: 1, niggles: 1, niggling: 1, banker: 1, tanker: 1, wander: 1, wonder: 1, slit: 1 };
   var AM_LEET = { "0": "o", "1": "i", "!": "i", "|": "i", "3": "e", "4": "a", "@": "a", "5": "s", "$": "s", "7": "t", "+": "t", "8": "b", "9": "g", "(": "c", "<": "c", "€": "e", "ü": "u", "ú": "u", "ù": "u", "ó": "o", "ò": "o", "ö": "o", "á": "a", "à": "a", "ä": "a", "í": "i", "ì": "i", "é": "e", "è": "e" };
   var AM_WILD = { "*": 1, "#": 1, "%": 1, "?": 1, "-": 0, "_": 0, ".": 0 };
   function amNormalizeToken(tok) {
@@ -14782,7 +14782,9 @@ html[data-theme="devprotocol"] body::after{
   // a curse with ONE letter left out ("fck", "fuk", "sht", "btch") —
   // except real words that look like that ("cut", "sit", "hit", "itch"…)
   var AM_DEL_OK = { cut: 1, sit: 1, hit: 1, itch: 1, ick: 1, wore: 1, niger: 1, wat: 1, tat: 1, iss: 1, ock: 1, lut: 1, sut: 1, unt: 1,
-                    whre: 1, wher: 1, coc: 1, pis: 1, shi: 1, dic: 1, fuc: 1, uck: 1, slu: 1, twa: 1, cun: 1, bitc: 1, hore: 1, asshle: 0 };
+                    whre: 1, wher: 1, coc: 1, uck: 1, slu: 1, twa: 1, cun: 1, bitc: 1, hore: 1, asshle: 0 };
+  // these only count when they're the WHOLE word ("shi"), not the start of a real one (ship, dictionary, pistol)
+  var AM_DEL_PRE_OK = { shi: 1, dic: 1, pis: 1, fuc: 1 };
   function amMissingOne(t, w) {
     if (t.length !== w.length - 1 || w.length < 4) return false;
     for (var i = 0; i < w.length; i++) if (w.slice(0, i) + w.slice(i + 1) === t) return true;
@@ -14795,7 +14797,7 @@ html[data-theme="devprotocol"] body::after{
     return d === 1;
   }
   // common curse abbreviations
-  var AM_SHORT = { stfu: "fuck", wtf: "fuck", fk: "fuck", fkn: "fuck", fking: "fuck", fkin: "fuck", mf: "motherfucker", mfer: "motherfucker", btch: "bitch", sht: "shit" };
+  var AM_SHORT = { stfu: "fuck", wtf: "fuck", fk: "fuck", fkn: "fuck", fking: "fuck", fkin: "fuck", mf: "motherfucker", mfer: "motherfucker", sht: "shit", "a**": "ass", "a**hole": "asshole", "as*hole": "asshole", "a*s": "ass", "as*": "ass", "*ss": "ass" };
   // "ope" in any form: ope, OPE, Ope!, 0pe, o.p.e, o p e, ooope, opeee, op3
   // (but NOT inside real words like hope, open, rope, scope)
   function findOpe(text) {
@@ -14813,6 +14815,7 @@ html[data-theme="devprotocol"] body::after{
     var toks = amTokens(text);
     for (var a = 0; a < toks.length; a++) if (AM_SHORT[toks[a]]) return AM_SHORT[toks[a]];
     for (var i = 0; i < toks.length; i++) {
+      if (AM_OK[toks[i]] === 1) continue;                 // a real word exactly as typed (sheet, psst…)
       var vars = amVariants(toks[i]);
       for (var j = 0; j < vars.length; j++) {
         var t = vars[j];
@@ -14825,7 +14828,7 @@ html[data-theme="devprotocol"] body::after{
             if (amMissingOne(t, w) && AM_DEL_OK[t] !== 1) return w;
             if (t.length > w.length - 1) {
               var pre = t.slice(0, w.length - 1);
-              if (AM_DEL_OK[pre] !== 1 && AM_OK[t] !== 1 && amMissingOne(pre, w) && !/^(cut|sit|hit|itch|wore|wat|tat)/.test(t)) return w;
+              if (AM_DEL_OK[pre] !== 1 && AM_DEL_PRE_OK[pre] !== 1 && AM_OK[t] !== 1 && amMissingOne(pre, w) && !/^(cut|sit|hit|itch|wore|wat|tat)/.test(t)) return w;
             }
           }
           // inside a longer word: fucking, f*cking, bullshitter
@@ -14858,7 +14861,7 @@ html[data-theme="devprotocol"] body::after{
       reporter: "fork",                            // reports come from @fork
       reported: me,
       reason: ope ? ("@" + me + " said ope — in " + where + ": \"" + snippet + "\"")
-                  : ("@" + me + " said a curse word (\"" + hit + "\") — in " + where + ": \"" + snippet + "\""),
+                  : ("@" + me + " said: \"" + snippet + "\" — in " + where),      // exactly what they typed, never the word itself
       createdAt: now,
       status: "pending",
       votes: []
